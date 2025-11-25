@@ -1,7 +1,6 @@
 const express = require('express');
 const fetch = require('node-fetch');
 const { marked } = require('marked');
-const hljs = require('highlight.js');
 const fs = require('fs');
 const path = require('path');
 const open = require('open');
@@ -13,13 +12,33 @@ const cssPath = require.resolve('github-markdown-css/github-markdown.css');
 const cssContent = fs.readFileSync(cssPath, 'utf8');
 
 // Configure marked to use highlight.js for fenced code blocks
+// Initialize Starry Night (GitHub syntax highlighter)
+let starryNight;
+let toHtml;
+
+async function initHighlighter() {
+  try {
+    const { createStarryNight, common } = await import('@wooorm/starry-night');
+    const { toHtml: th } = await import('hast-util-to-html');
+    toHtml = th;
+    starryNight = await createStarryNight(common);
+    console.log('Starry Night highlighter initialized');
+  } catch (err) {
+    console.error('Failed to initialize highlighter:', err);
+  }
+}
+
+// Configure marked to use Starry Night
 marked.setOptions({
   highlight(code, lang) {
+    if (!starryNight || !lang) return code;
+
+    const scope = starryNight.flagToScope(lang);
+    if (!scope) return code;
+
     try {
-      if (lang && hljs.getLanguage(lang)) {
-        return hljs.highlight(code, { language: lang }).value;
-      }
-      return hljs.highlightAuto(code).value;
+      const tree = starryNight.highlight(code, scope);
+      return toHtml(tree);
     } catch (err) {
       return code;
     }
@@ -27,50 +46,8 @@ marked.setOptions({
 });
 
 // Minimal GitHub-like highlight styles
-const highlightStyles = `
-  .hljs {
-    background: transparent;
-    color: #24292e;
-  }
-  .hljs-comment,
-  .hljs-quote {
-    color: #6a737d;
-  }
-  .hljs-keyword,
-  .hljs-selector-tag,
-  .hljs-literal,
-  .hljs-section,
-  .hljs-doctag,
-  .hljs-type {
-    color: #d73a49;
-  }
-  .hljs-attr,
-  .hljs-name,
-  .hljs-attribute {
-    color: #005cc5;
-  }
-  .hljs-number,
-  .hljs-selector-attr,
-  .hljs-selector-pseudo {
-    color: #005cc5;
-  }
-  .hljs-string,
-  .hljs-meta .hljs-string {
-    color: #032f62;
-  }
-  .hljs-variable,
-  .hljs-template-variable,
-  .hljs-title,
-  .hljs-type.def,
-  .hljs-class .hljs-title {
-    color: #6f42c1;
-  }
-  .hljs-symbol,
-  .hljs-bullet,
-  .hljs-link {
-    color: #6f42c1;
-  }
-`;
+// highlight.js CSS removed as github-markdown-css includes .pl- classes
+const highlightStyles = '';
 
 // Action menu styles and script
 const actionMenuStyles = `
@@ -514,7 +491,8 @@ app.get('/local', (req, res) => {
 });
 
 // Start server on random available port
-const server = app.listen(0, () => {
+const server = app.listen(0, async () => {
+  await initHighlighter();
   const port = server.address().port;
   console.log(`MarkHub running at http://localhost:${port}`);
 

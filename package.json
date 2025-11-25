@@ -11,8 +11,10 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@wooorm/starry-night": "^3.8.0",
     "express": "^5.1.0",
     "github-markdown-css": "^5.8.1",
+    "hast-util-to-html": "^9.0.5",
     "highlight.js": "^11.11.1",
     "marked": "^4.3.0",
     "node-fetch": "^2.7.0",
