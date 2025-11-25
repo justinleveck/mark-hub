@@ -18,6 +18,12 @@ const actionMenuStyles = `
     top: 16px;
     right: 16px;
     z-index: 100;
+    opacity: 0.3;
+    transition: opacity 0.3s ease;
+  }
+  .actions-flag:hover,
+  .actions-flag.active {
+    opacity: 1;
   }
   .flag-toggle {
     padding: 4px 12px;
@@ -76,10 +82,14 @@ const actionMenuStyles = `
 const actionMenuScript = `
   function toggleMenu(e) {
     e.stopPropagation();
-    document.getElementById('flagMenu').classList.toggle('open');
+    const menu = document.getElementById('flagMenu');
+    const flag = document.querySelector('.actions-flag');
+    menu.classList.toggle('open');
+    flag.classList.toggle('active', menu.classList.contains('open'));
   }
   function closeMenu() {
     document.getElementById('flagMenu').classList.remove('open');
+    document.querySelector('.actions-flag').classList.remove('active');
   }
   document.addEventListener('click', function(e) {
     if (!e.target.closest('.actions-flag')) {
