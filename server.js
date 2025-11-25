@@ -1,6 +1,7 @@
 const express = require('express');
 const fetch = require('node-fetch');
 const { marked } = require('marked');
+const hljs = require('highlight.js');
 const fs = require('fs');
 const path = require('path');
 const open = require('open');
@@ -10,6 +11,66 @@ app.use(express.text({ limit: '10mb', type: 'text/plain' }));
 
 const cssPath = require.resolve('github-markdown-css/github-markdown.css');
 const cssContent = fs.readFileSync(cssPath, 'utf8');
+
+// Configure marked to use highlight.js for fenced code blocks
+marked.setOptions({
+  highlight(code, lang) {
+    try {
+      if (lang && hljs.getLanguage(lang)) {
+        return hljs.highlight(code, { language: lang }).value;
+      }
+      return hljs.highlightAuto(code).value;
+    } catch (err) {
+      return code;
+    }
+  }
+});
+
+// Minimal GitHub-like highlight styles
+const highlightStyles = `
+  .hljs {
+    background: transparent;
+    color: #24292e;
+  }
+  .hljs-comment,
+  .hljs-quote {
+    color: #6a737d;
+  }
+  .hljs-keyword,
+  .hljs-selector-tag,
+  .hljs-literal,
+  .hljs-section,
+  .hljs-doctag,
+  .hljs-type {
+    color: #d73a49;
+  }
+  .hljs-attr,
+  .hljs-name,
+  .hljs-attribute {
+    color: #005cc5;
+  }
+  .hljs-number,
+  .hljs-selector-attr,
+  .hljs-selector-pseudo {
+    color: #005cc5;
+  }
+  .hljs-string,
+  .hljs-meta .hljs-string {
+    color: #032f62;
+  }
+  .hljs-variable,
+  .hljs-template-variable,
+  .hljs-title,
+  .hljs-type.def,
+  .hljs-class .hljs-title {
+    color: #6f42c1;
+  }
+  .hljs-symbol,
+  .hljs-bullet,
+  .hljs-link {
+    color: #6f42c1;
+  }
+`;
 
 // Action menu styles and script
 const actionMenuStyles = `
@@ -284,6 +345,7 @@ app.post('/render', (req, res) => {
         <link rel="icon" type="image/svg+xml" href="/favicon.svg">
         <style>
           ${cssContent}
+          ${highlightStyles}
           .markdown-body {
             box-sizing: border-box;
             min-width: 200px;
@@ -354,6 +416,7 @@ app.get('/view', async (req, res) => {
         <link rel="icon" type="image/svg+xml" href="/favicon.svg">
         <style>
           ${cssContent}
+          ${highlightStyles}
           .markdown-body {
             box-sizing: border-box;
             min-width: 200px;
