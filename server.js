@@ -11,6 +11,94 @@ app.use(express.text({ limit: '10mb', type: 'text/plain' }));
 const cssPath = require.resolve('github-markdown-css/github-markdown.css');
 const cssContent = fs.readFileSync(cssPath, 'utf8');
 
+// Action menu styles and script
+const actionMenuStyles = `
+  .actions-flag {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    z-index: 100;
+  }
+  .flag-toggle {
+    padding: 4px 12px;
+    border-radius: 999px;
+    border: 1px solid #d0d7de;
+    background: #f6f8fa;
+    font-size: 12px;
+    color: #57606a;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .flag-toggle:hover {
+    background: #eaeef2;
+    border-color: #afb8c1;
+  }
+  .flag-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    background: #fff;
+    border-radius: 8px;
+    border: 1px solid #d0d7de;
+    box-shadow: 0 8px 24px rgba(140,149,159,0.2);
+    padding: 4px 0;
+    min-width: 160px;
+    opacity: 0;
+    transform: translateY(-8px);
+    pointer-events: none;
+    transition: opacity 0.2s, transform 0.2s;
+  }
+  .flag-menu.open {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+  .flag-menu button,
+  .flag-menu a {
+    display: block;
+    width: 100%;
+    padding: 8px 16px;
+    border: none;
+    background: none;
+    text-align: left;
+    font-size: 14px;
+    color: #24292f;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.1s;
+  }
+  .flag-menu button:hover,
+  .flag-menu a:hover {
+    background: #f6f8fa;
+  }
+`;
+
+const actionMenuScript = `
+  function toggleMenu(e) {
+    e.stopPropagation();
+    document.getElementById('flagMenu').classList.toggle('open');
+  }
+  function closeMenu() {
+    document.getElementById('flagMenu').classList.remove('open');
+  }
+  document.addEventListener('click', function(e) {
+    if (!e.target.closest('.actions-flag')) {
+      closeMenu();
+    }
+  });
+`;
+
+const actionMenuHTML = `
+<div class="actions-flag no-print">
+  <button class="flag-toggle" onclick="toggleMenu(event)">⚙ Actions</button>
+  <div class="flag-menu" id="flagMenu">
+    <a href="/">New</a>
+    <button onclick="window.print(); closeMenu()">Print / Save PDF</button>
+  </div>
+</div>
+<script>${actionMenuScript}</script>
+`;
+
 // Serve favicon
 app.get('/favicon.svg', (req, res) => {
   res.setHeader('Content-Type', 'image/svg+xml');
@@ -206,50 +294,11 @@ app.post('/render', (req, res) => {
               display: none;
             }
           }
-          .control-bar {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: white;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-          }
-          .btn {
-            display: inline-block;
-            padding: 6px 12px;
-            font-size: 14px;
-            font-weight: 600;
-            line-height: 20px;
-            white-space: nowrap;
-            cursor: pointer;
-            user-select: none;
-            border: 1px solid rgba(27,31,35,0.15);
-            border-radius: 6px;
-            color: #24292e;
-            background-color: #eff3f6;
-            background-image: linear-gradient(-180deg,#fafbfc,#eff3f6 90%);
-            text-decoration: none;
-          }
-          .btn:hover {
-            background-color: #e6ebf1;
-            background-image: linear-gradient(-180deg,#f0f3f6,#e6ebf1 90%);
-            background-position: -.5em;
-            border-color: rgba(27,31,35,0.35);
-          }
-          .btn-primary {
-            color: #fff;
-            background-color: #2ea44f;
-            background-image: linear-gradient(-180deg,#34d058,#28a745 90%);
-          }
+          ${actionMenuStyles}
         </style>
       </head>
       <body class="markdown-body">
-        <div class="control-bar no-print">
-          <a href="/" class="btn">New</a>
-          <button onclick="window.print()" class="btn btn-primary">Print / Save PDF</button>
-        </div>
+        ${actionMenuHTML}
         ${htmlContent}
       </body>
       </html>
@@ -315,50 +364,11 @@ app.get('/view', async (req, res) => {
               display: none;
             }
           }
-          .control-bar {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: white;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-          }
-          .btn {
-            display: inline-block;
-            padding: 6px 12px;
-            font-size: 14px;
-            font-weight: 600;
-            line-height: 20px;
-            white-space: nowrap;
-            cursor: pointer;
-            user-select: none;
-            border: 1px solid rgba(27,31,35,0.15);
-            border-radius: 6px;
-            color: #24292e;
-            background-color: #eff3f6;
-            background-image: linear-gradient(-180deg,#fafbfc,#eff3f6 90%);
-            text-decoration: none;
-          }
-          .btn:hover {
-            background-color: #e6ebf1;
-            background-image: linear-gradient(-180deg,#f0f3f6,#e6ebf1 90%);
-            background-position: -.5em;
-            border-color: rgba(27,31,35,0.35);
-          }
-          .btn-primary {
-            color: #fff;
-            background-color: #2ea44f;
-            background-image: linear-gradient(-180deg,#34d058,#28a745 90%);
-          }
+          ${actionMenuStyles}
         </style>
       </head>
       <body class="markdown-body">
-        <div class="control-bar no-print">
-          <a href="/" class="btn">New</a>
-          <button onclick="window.print()" class="btn btn-primary">Print / Save PDF</button>
-        </div>
+        ${actionMenuHTML}
         ${htmlContent}
       </body>
       </html>
@@ -371,7 +381,7 @@ app.get('/view', async (req, res) => {
 
 // Endpoint to serve local markdown files
 app.get('/local', (req, res) => {
-  const { file } = req.query;
+  const { file, embed } = req.query;
   if (!file) return res.redirect('/');
 
   try {
@@ -386,6 +396,7 @@ app.get('/local', (req, res) => {
     const markdown = fs.readFileSync(filePath, 'utf8');
     const htmlContent = marked.parse(markdown);
     const fileName = path.basename(filePath);
+    const isEmbed = embed === 'true';
 
     res.send(`
       <!DOCTYPE html>
@@ -415,50 +426,11 @@ app.get('/local', (req, res) => {
               display: none;
             }
           }
-          .control-bar {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: white;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-          }
-          .btn {
-            display: inline-block;
-            padding: 6px 12px;
-            font-size: 14px;
-            font-weight: 600;
-            line-height: 20px;
-            white-space: nowrap;
-            cursor: pointer;
-            user-select: none;
-            border: 1px solid rgba(27,31,35,0.15);
-            border-radius: 6px;
-            color: #24292e;
-            background-color: #eff3f6;
-            background-image: linear-gradient(-180deg,#fafbfc,#eff3f6 90%);
-            text-decoration: none;
-          }
-          .btn:hover {
-            background-color: #e6ebf1;
-            background-image: linear-gradient(-180deg,#f0f3f6,#e6ebf1 90%);
-            background-position: -.5em;
-            border-color: rgba(27,31,35,0.35);
-          }
-          .btn-primary {
-            color: #fff;
-            background-color: #2ea44f;
-            background-image: linear-gradient(-180deg,#34d058,#28a745 90%);
-          }
+          ${actionMenuStyles}
         </style>
       </head>
       <body class="markdown-body">
-        <div class="control-bar no-print">
-          <a href="/" class="btn">New</a>
-          <button onclick="window.print()" class="btn btn-primary">Print / Save PDF</button>
-        </div>
+        ${!isEmbed ? actionMenuHTML : ''}
         ${htmlContent}
       </body>
       </html>
@@ -493,20 +465,25 @@ const server = app.listen(0, () => {
   });
 
   // Check for initial argument - could be a URL or file path
-  const initialArg = process.argv[2];
-  if (initialArg) {
-    // Check if it's a file path
-    if (fs.existsSync(initialArg)) {
-      const absolutePath = path.resolve(initialArg);
-      open(`http://localhost:${port}/local?file=${encodeURIComponent(absolutePath)}`);
-    } else if (initialArg.startsWith('http://') || initialArg.startsWith('https://')) {
-      // It's a URL
-      open(`http://localhost:${port}/view?url=${encodeURIComponent(initialArg)}`);
+  // Skip browser opening if MARKHUB_NO_BROWSER is set (used by editor extensions)
+  const noBrowser = process.env.MARKHUB_NO_BROWSER === '1';
+
+  if (!noBrowser) {
+    const initialArg = process.argv[2];
+    if (initialArg) {
+      // Check if it's a file path
+      if (fs.existsSync(initialArg)) {
+        const absolutePath = path.resolve(initialArg);
+        open(`http://localhost:${port}/local?file=${encodeURIComponent(absolutePath)}`);
+      } else if (initialArg.startsWith('http://') || initialArg.startsWith('https://')) {
+        // It's a URL
+        open(`http://localhost:${port}/view?url=${encodeURIComponent(initialArg)}`);
+      } else {
+        console.error(`Error: File not found: ${initialArg}`);
+        open(`http://localhost:${port}`);
+      }
     } else {
-      console.error(`Error: File not found: ${initialArg}`);
       open(`http://localhost:${port}`);
     }
-  } else {
-    open(`http://localhost:${port}`);
   }
 });

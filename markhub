@@ -94,6 +94,7 @@ open_url() {
 
 # Parse command-line arguments
 RESTART=false
+NO_BROWSER=false
 FILE_OR_URL=""
 
 while [[ $# -gt 0 ]]; do
@@ -114,6 +115,10 @@ while [[ $# -gt 0 ]]; do
         -v|--version)
             echo "MarkHub v1.0.0"
             exit 0
+            ;;
+        --no-browser)
+            NO_BROWSER=true
+            shift
             ;;
         *)
             FILE_OR_URL="$1"
@@ -143,8 +148,12 @@ fi
 if [ -f "$PORT_FILE" ]; then
     PORT=$(cat "$PORT_FILE")
     if check_server "$PORT"; then
-        echo "Using existing MarkHub server on port $PORT"
-        open_url "$PORT" "$FILE_OR_URL"
+        if [ "$NO_BROWSER" = false ]; then
+            echo "Using existing MarkHub server on port $PORT"
+            open_url "$PORT" "$FILE_OR_URL"
+        else
+            echo "MarkHub server running on port $PORT"
+        fi
         exit 0
     else
         # Port file exists but server isn't running, clean up
@@ -154,4 +163,8 @@ fi
 
 # Start new server
 cd "$SCRIPT_DIR"
-node server.js "$FILE_OR_URL"
+if [ "$NO_BROWSER" = true ]; then
+    MARKHUB_NO_BROWSER=1 node server.js "$FILE_OR_URL"
+else
+    node server.js "$FILE_OR_URL"
+fi

@@ -65,7 +65,7 @@ function ensureServerRunning() {
 }
 
 function startServer(resolve, reject) {
-    exec(`${MARKHUB_COMMAND} > /dev/null 2>&1 &`, (error) => {
+    exec(`${MARKHUB_COMMAND} --no-browser > /dev/null 2>&1 &`, (error) => {
         if (error) {
             reject(error);
             return;
@@ -94,9 +94,9 @@ async function openInMarkHub(filePath, viewColumn = vscode.ViewColumn.Two) {
         // Ensure server is running
         const port = await ensureServerRunning();
 
-        // Encode the file path
+        // Encode the file path and add embed parameter to hide control buttons
         const encodedPath = encodeURIComponent(filePath);
-        const url = `http://localhost:${port}/local?file=${encodedPath}`;
+        const url = `http://localhost:${port}/local?file=${encodedPath}&embed=true`;
 
         // Create webview panel
         const panel = vscode.window.createWebviewPanel(
