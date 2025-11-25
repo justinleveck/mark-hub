@@ -18,11 +18,11 @@ let toHtml;
 
 async function initHighlighter() {
   try {
-    const { createStarryNight, common } = await import('@wooorm/starry-night');
+    const { createStarryNight, all } = await import('@wooorm/starry-night');
     const { toHtml: th } = await import('hast-util-to-html');
     toHtml = th;
-    starryNight = await createStarryNight(common);
-    console.log('Starry Night highlighter initialized');
+    starryNight = await createStarryNight(all);
+    console.log('Starry Night highlighter initialized with all grammars');
   } catch (err) {
     console.error('Failed to initialize highlighter:', err);
   }
