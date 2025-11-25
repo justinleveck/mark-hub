@@ -5,6 +5,64 @@
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PORT_FILE="$SCRIPT_DIR/.markhub-port"
 
+# Show help
+show_help() {
+    cat << EOF
+MarkHub - Markdown viewer with GitHub styling
+
+Usage: markhub [OPTIONS] [FILE|URL]
+
+Options:
+  -h, --help       Show this help message
+  -r, --restart    Restart the server (kill existing and start new)
+  -s, --stop       Stop the running server
+  -p, --port       Show the current server port
+  -v, --version    Show version information
+
+Examples:
+  markhub                           Start server and open home page
+  markhub README.md                 Open a markdown file
+  markhub ~/Documents/notes.md      Open file with absolute path
+  markhub https://gist.github.com/...  Open a Gist URL
+  markhub -r                        Restart the server
+  markhub -s                        Stop the server
+  markhub -p                        Show current port
+
+EOF
+    exit 0
+}
+
+# Stop server
+stop_server() {
+    if [ -f "$PORT_FILE" ]; then
+        PORT=$(cat "$PORT_FILE")
+        echo "Stopping MarkHub server on port $PORT..."
+        pkill -f "node.*server.js"
+        rm -f "$PORT_FILE"
+        echo "Server stopped."
+    else
+        echo "No server is currently running."
+    fi
+    exit 0
+}
+
+# Show port
+show_port() {
+    if [ -f "$PORT_FILE" ]; then
+        PORT=$(cat "$PORT_FILE")
+        if check_server "$PORT"; then
+            echo "MarkHub is running on port $PORT"
+            echo "URL: http://localhost:$PORT"
+        else
+            echo "Port file exists but server is not responding."
+            rm -f "$PORT_FILE"
+        fi
+    else
+        echo "No server is currently running."
+    fi
+    exit 0
+}
+
 if ! command -v node &> /dev/null; then
     echo "Error: node could not be found"
     exit 1
@@ -34,12 +92,59 @@ open_url() {
     fi
 }
 
+# Parse command-line arguments
+RESTART=false
+FILE_OR_URL=""
+
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -h|--help)
+            show_help
+            ;;
+        -r|--restart)
+            RESTART=true
+            shift
+            ;;
+        -s|--stop)
+            stop_server
+            ;;
+        -p|--port)
+            show_port
+            ;;
+        -v|--version)
+            echo "MarkHub v1.0.0"
+            exit 0
+            ;;
+        *)
+            FILE_OR_URL="$1"
+            shift
+            ;;
+    esac
+done
+
+# Handle restart
+if [ "$RESTART" = true ]; then
+    if [ -f "$PORT_FILE" ]; then
+        PORT=$(cat "$PORT_FILE")
+        echo "Restarting MarkHub server (was on port $PORT)..."
+        pkill -f "node.*server.js"
+        rm -f "$PORT_FILE"
+        sleep 1
+    else
+        echo "No server running, starting new server..."
+    fi
+    # Start new server
+    cd "$SCRIPT_DIR"
+    node server.js "$FILE_OR_URL"
+    exit 0
+fi
+
 # Check if server is already running
 if [ -f "$PORT_FILE" ]; then
     PORT=$(cat "$PORT_FILE")
     if check_server "$PORT"; then
         echo "Using existing MarkHub server on port $PORT"
-        open_url "$PORT" "$1"
+        open_url "$PORT" "$FILE_OR_URL"
         exit 0
     else
         # Port file exists but server isn't running, clean up
@@ -49,4 +154,4 @@ fi
 
 # Start new server
 cd "$SCRIPT_DIR"
-node server.js "$@"
+node server.js "$FILE_OR_URL"

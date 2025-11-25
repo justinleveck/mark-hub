@@ -11,12 +11,19 @@ app.use(express.text({ limit: '10mb', type: 'text/plain' }));
 const cssPath = require.resolve('github-markdown-css/github-markdown.css');
 const cssContent = fs.readFileSync(cssPath, 'utf8');
 
+// Serve favicon
+app.get('/favicon.svg', (req, res) => {
+  res.setHeader('Content-Type', 'image/svg+xml');
+  res.sendFile(path.join(__dirname, 'favicon.svg'));
+});
+
 app.get('/', (req, res) => {
   res.send(`
     <!DOCTYPE html>
     <html>
     <head>
       <title>MarkHub</title>
+      <link rel="icon" type="image/svg+xml" href="/favicon.svg">
       <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; padding: 2rem; max-width: 600px; margin: 0 auto; }
         input { width: 100%; padding: 10px; font-size: 16px; margin-bottom: 10px; }
@@ -56,10 +63,24 @@ app.get('/', (req, res) => {
         }
         .divider::before { left: 0; }
         .divider::after { right: 0; }
+        .logo {
+          display: inline-block;
+          width: 40px;
+          height: 40px;
+          vertical-align: middle;
+          margin-right: 10px;
+        }
+        h1 {
+          display: flex;
+          align-items: center;
+        }
       </style>
     </head>
     <body>
-      <h1>MarkHub</h1>
+      <h1>
+        <img src="/favicon.svg" alt="MarkHub" class="logo">
+        MarkHub
+      </h1>
       <p>Enter a Gist URL or Raw Markdown URL to view it with GitHub styling.</p>
       <form action="/view" method="get">
         <input type="text" name="url" placeholder="https://gist.github.com/..." required>
@@ -162,6 +183,7 @@ app.post('/render', (req, res) => {
       <html>
       <head>
         <title>MarkHub View</title>
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg">
         <style>
           ${cssContent}
           .markdown-body {
@@ -270,6 +292,7 @@ app.get('/view', async (req, res) => {
       <html>
       <head>
         <title>MarkHub View</title>
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg">
         <style>
           ${cssContent}
           .markdown-body {
@@ -369,6 +392,7 @@ app.get('/local', (req, res) => {
       <html>
       <head>
         <title>${fileName} - MarkHub</title>
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg">
         <style>
           ${cssContent}
           .markdown-body {

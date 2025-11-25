@@ -22,25 +22,52 @@ npm install
 
 # Make the wrapper script executable
 chmod +x markhub
+
+# Optional: Install globally as 'm' command
+cp markhub ~/.local/bin/markhub
+chmod +x ~/.local/bin/markhub
+ln -sf ~/.local/bin/markhub ~/.local/bin/m
+
+# Update MARKHUB_DIR in ~/.local/bin/markhub to point to your installation directory
 ```
 
 ## Usage
 
-### Start the app
+### Command-line options
 
 ```bash
+# Show help
+m -h
+m --help
+
 # Start with home page
-./markhub
+m
 
 # Open a local markdown file
-./markhub README.md
-./markhub /path/to/file.md
+m README.md
+m ~/Documents/notes.md
 
 # Open a Gist URL
-./markhub https://gist.github.com/username/gist-id
+m https://gist.github.com/username/gist-id
 
-# Open a raw markdown URL
-./markhub https://raw.githubusercontent.com/user/repo/main/README.md
+# Restart the server (useful after code changes)
+m -r
+m --restart
+
+# Restart and open a file
+m -r README.md
+
+# Stop the server
+m -s
+m --stop
+
+# Show current server port
+m -p
+m --port
+
+# Show version
+m -v
+m --version
 ```
 
 ### Smart server behavior
@@ -75,7 +102,32 @@ chmod +x markhub
 
 ## Stopping the server
 
-Press `Ctrl+C` in the terminal where the server is running.
+Press `Ctrl+C` in the terminal where the server is running, or use:
+```bash
+m -s
+```
+
+## Editor Extension (VS Code / Windsurf / Antigravity)
+
+An editor extension is included to preview markdown files directly in your editor using MarkHub.
+
+### Install the extension
+
+```bash
+cd markhub-vscode
+./install.sh
+```
+
+The install script will automatically detect and install to VS Code, Windsurf, and Antigravity if present. Then restart your editor.
+
+### Using the extension
+
+1. Open any markdown file
+2. Press `Cmd+Shift+M` (Mac) or `Ctrl+Shift+M` (Windows/Linux)
+3. Or click the preview icon in the editor toolbar
+4. Or right-click and select "MarkHub: Preview Markdown"
+
+The extension will automatically start the MarkHub server if it's not running and display your markdown with GitHub styling in a side panel.
 
 ## Technical Details
 

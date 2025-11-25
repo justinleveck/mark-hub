@@ -1,0 +1,65 @@
+{
+    "name": "markhub-preview",
+    "displayName": "MarkHub Preview",
+    "description": "Preview markdown files using MarkHub with GitHub styling",
+    "version": "1.0.0",
+    "publisher": "local",
+    "engines": {
+        "vscode": "^1.80.0"
+    },
+    "categories": [
+        "Other"
+    ],
+    "activationEvents": [
+        "onLanguage:markdown"
+    ],
+    "main": "./extension.js",
+    "contributes": {
+        "commands": [
+            {
+                "command": "markhub.preview",
+                "title": "MarkHub: Preview Markdown",
+                "icon": "$(open-preview)"
+            },
+            {
+                "command": "markhub.previewSide",
+                "title": "MarkHub: Preview Markdown (Side by Side)",
+                "icon": "$(open-preview)"
+            }
+        ],
+        "menus": {
+            "editor/title": [
+                {
+                    "command": "markhub.previewSide",
+                    "when": "editorLangId == markdown",
+                    "group": "navigation"
+                }
+            ],
+            "editor/context": [
+                {
+                    "command": "markhub.preview",
+                    "when": "editorLangId == markdown",
+                    "group": "navigation"
+                }
+            ],
+            "commandPalette": [
+                {
+                    "command": "markhub.preview",
+                    "when": "editorLangId == markdown"
+                },
+                {
+                    "command": "markhub.previewSide",
+                    "when": "editorLangId == markdown"
+                }
+            ]
+        },
+        "keybindings": [
+            {
+                "command": "markhub.previewSide",
+                "key": "ctrl+shift+m",
+                "mac": "cmd+shift+m",
+                "when": "editorLangId == markdown"
+            }
+        ]
+    }
+}
