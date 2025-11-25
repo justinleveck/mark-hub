@@ -20,16 +20,19 @@ cd mark-hub
 # Install dependencies
 npm install
 
-# Make the wrapper script executable
+# Option 1: Use the install script (recommended)
+./install.sh
+
+# Option 2: Run locally without installing
 chmod +x markhub
-
-# Optional: Install globally as 'm' command
-cp markhub ~/.local/bin/markhub
-chmod +x ~/.local/bin/markhub
-ln -sf ~/.local/bin/markhub ~/.local/bin/m
-
-# Update MARKHUB_DIR in ~/.local/bin/markhub to point to your installation directory
+./markhub
 ```
+
+The install script will:
+- Copy the wrapper to `~/.local/bin/markhub`
+- Configure it to point to your project directory
+- Create an `m` alias for convenience
+- Make sure `~/.local/bin` is in your PATH
 
 ## Usage
 
