@@ -161,10 +161,21 @@ if [ -f "$PORT_FILE" ]; then
     fi
 fi
 
-# Start new server
+# Start new server in background
 cd "$SCRIPT_DIR"
 if [ "$NO_BROWSER" = true ]; then
-    MARKHUB_NO_BROWSER=1 node server.js "$FILE_OR_URL"
+    MARKHUB_NO_BROWSER=1 node server.js "$FILE_OR_URL" > /dev/null 2>&1 &
 else
-    node server.js "$FILE_OR_URL"
+    node server.js "$FILE_OR_URL" > /dev/null 2>&1 &
+fi
+
+# Wait briefly for server to start and write port file
+sleep 1
+
+# If we have a file/URL argument and not in no-browser mode, open it
+if [ "$NO_BROWSER" = false ] && [ -n "$FILE_OR_URL" ]; then
+    PORT=$(cat "$PORT_FILE" 2>/dev/null)
+    if [ -n "$PORT" ]; then
+        open_url "$PORT" "$FILE_OR_URL"
+    fi
 fi
