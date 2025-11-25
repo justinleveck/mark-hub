@@ -1,0 +1,52 @@
+#!/bin/bash
+# Wrapper for MarkHub
+
+# Get the directory where this script is located
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+PORT_FILE="$SCRIPT_DIR/.markhub-port"
+
+if ! command -v node &> /dev/null; then
+    echo "Error: node could not be found"
+    exit 1
+fi
+
+# Function to check if server is running on a given port
+check_server() {
+    local port=$1
+    curl -s "http://localhost:$port" > /dev/null 2>&1
+    return $?
+}
+
+# Function to open URL in browser
+open_url() {
+    local port=$1
+    local arg=$2
+    
+    if [ -z "$arg" ]; then
+        open "http://localhost:$port"
+    elif [ -f "$arg" ]; then
+        # It's a file path - convert to absolute path
+        local abs_path=$(cd "$(dirname "$arg")" && pwd)/$(basename "$arg")
+        open "http://localhost:$port/local?file=$(node -e "console.log(encodeURIComponent('$abs_path'))")"
+    else
+        # Assume it's a URL
+        open "http://localhost:$port/view?url=$(node -e "console.log(encodeURIComponent('$arg'))")"
+    fi
+}
+
+# Check if server is already running
+if [ -f "$PORT_FILE" ]; then
+    PORT=$(cat "$PORT_FILE")
+    if check_server "$PORT"; then
+        echo "Using existing MarkHub server on port $PORT"
+        open_url "$PORT" "$1"
+        exit 0
+    else
+        # Port file exists but server isn't running, clean up
+        rm -f "$PORT_FILE"
+    fi
+fi
+
+# Start new server
+cd "$SCRIPT_DIR"
+node server.js "$@"
