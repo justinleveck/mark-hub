@@ -42,45 +42,56 @@ function isServerRunning(port) {
 }
 
 /**
- * Start the MarkHub server if not running
+ * Start the MarkHub server if not running.
+ * Reuse an existing working port if possible, otherwise start a new server
+ * and wait until it is reachable on the random high port written to .markhub-port.
  */
 function ensureServerRunning() {
-    return new Promise((resolve, reject) => {
-        const port = getServerPort();
+    return new Promise(async (resolve, reject) => {
+        try {
+            const existingPort = getServerPort();
 
-        if (port) {
-            isServerRunning(port).then(running => {
-                if (running) {
-                    resolve(port);
-                    return;
-                }
-                // Port file exists but server not running, start new one
-                startServer(resolve, reject);
-            });
-        } else {
-            // No port file, start new server
-            startServer(resolve, reject);
+            // If we have a port in the file and the server responds, reuse it
+            if (existingPort && await isServerRunning(existingPort)) {
+                return resolve(existingPort);
+            }
+
+            // Otherwise start a fresh server and wait for a working port
+            const port = await startServerAndWait();
+            return resolve(port);
+        } catch (error) {
+            return reject(error);
         }
     });
 }
 
-function startServer(resolve, reject) {
-    exec(`${MARKHUB_COMMAND} --no-browser > /dev/null 2>&1 &`, (error) => {
-        if (error) {
-            reject(error);
-            return;
-        }
+/**
+ * Start MarkHub (random port) and wait until .markhub-port exists
+ * and the server responds on that port.
+ */
+function startServerAndWait() {
+    return new Promise((resolve, reject) => {
+        // Start markhub in no-browser mode; it will pick a random high port
+        exec(`${MARKHUB_COMMAND} --no-browser > /dev/null 2>&1 &`, (error) => {
+            if (error) {
+                return reject(error);
+            }
+        });
 
-        // Wait for server to start and write port file
         let attempts = 0;
-        const checkInterval = setInterval(() => {
+        const maxAttempts = 20; // ~10 seconds
+
+        const checkInterval = setInterval(async () => {
             const port = getServerPort();
-            if (port) {
+
+            if (port && await isServerRunning(port)) {
                 clearInterval(checkInterval);
-                resolve(port);
-            } else if (attempts++ > 10) {
+                return resolve(port);
+            }
+
+            if (attempts++ > maxAttempts) {
                 clearInterval(checkInterval);
-                reject(new Error('Server failed to start'));
+                return reject(new Error('MarkHub server failed to start or respond'));
             }
         }, 500);
     });
@@ -111,8 +122,6 @@ async function openInMarkHub(filePath, viewColumn = vscode.ViewColumn.Two) {
 
         // Set the webview content to an iframe
         panel.webview.html = getWebviewContent(url);
-
-        vscode.window.showInformationMessage(`MarkHub preview opened on port ${port}`);
     } catch (error) {
         vscode.window.showErrorMessage(`Failed to open MarkHub preview: ${error.message}`);
     }
@@ -144,7 +153,7 @@ function getWebviewContent(url) {
     </style>
 </head>
 <body>
-    <iframe src="${url}" sandbox="allow-same-origin allow-scripts allow-forms"></iframe>
+    <iframe src="${url}" sandbox="allow-scripts"></iframe>
 </body>
 </html>`;
 }
