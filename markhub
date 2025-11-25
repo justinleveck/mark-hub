@@ -149,8 +149,12 @@ if [ -f "$PORT_FILE" ]; then
     PORT=$(cat "$PORT_FILE")
     if check_server "$PORT"; then
         if [ "$NO_BROWSER" = false ]; then
-            echo "Using existing MarkHub server on port $PORT"
-            open_url "$PORT" "$FILE_OR_URL"
+            echo "MarkHub server already running"
+            echo "→ http://localhost:$PORT"
+            if [ -n "$FILE_OR_URL" ]; then
+                echo "Opening: $FILE_OR_URL"
+                open_url "$PORT" "$FILE_OR_URL"
+            fi
         else
             echo "MarkHub server running on port $PORT"
         fi
@@ -172,10 +176,14 @@ fi
 # Wait briefly for server to start and write port file
 sleep 1
 
-# If we have a file/URL argument and not in no-browser mode, open it
-if [ "$NO_BROWSER" = false ] && [ -n "$FILE_OR_URL" ]; then
-    PORT=$(cat "$PORT_FILE" 2>/dev/null)
-    if [ -n "$PORT" ]; then
+PORT=$(cat "$PORT_FILE" 2>/dev/null)
+
+if [ "$NO_BROWSER" = false ] && [ -n "$PORT" ]; then
+    echo "MarkHub server started"
+    echo "→ http://localhost:$PORT"
+    if [ -n "$FILE_OR_URL" ]; then
+        echo "Serving: $FILE_OR_URL"
         open_url "$PORT" "$FILE_OR_URL"
     fi
 fi
+
