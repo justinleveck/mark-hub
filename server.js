@@ -482,6 +482,348 @@ app.get('/local', (req, res) => {
       <body class="markdown-body">
         ${!isEmbed ? actionMenuHTML : ''}
         ${htmlContent}
+        <script>
+          // Vim-style keyboard navigation with visual mode and search
+          (function() {
+            let lastKeyTime = 0;
+            let lastKey = '';
+            let searchMode = false;
+            let searchQuery = '';
+            let searchMatches = [];
+            let currentMatchIndex = -1;
+            let visualMode = false;
+            let helpVisible = false;
+            
+            // Create search input overlay
+            const searchOverlay = document.createElement('div');
+            searchOverlay.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#2d2d2d;color:#fff;padding:10px 20px;border-radius:5px;font-family:monospace;font-size:14px;z-index:10000;display:none;box-shadow:0 4px 6px rgba(0,0,0,0.3);';
+            document.body.appendChild(searchOverlay);
+            
+            // Create help overlay
+            const helpOverlay = document.createElement('div');
+            helpOverlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:10001;display:none;overflow:auto;';
+            helpOverlay.innerHTML = \`
+              <div style="max-width:900px;margin:40px auto;background:#fff;border-radius:8px;padding:30px;box-shadow:0 8px 16px rgba(0,0,0,0.3);">
+                <h2 style="margin-top:0;color:#24292e;font-size:24px;border-bottom:2px solid #e1e4e8;padding-bottom:10px;">MarkHub Keyboard Shortcuts</h2>
+                
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:30px;margin-top:20px;">
+                  <div>
+                    <h3 style="color:#0366d6;font-size:16px;margin-bottom:10px;">Basic Navigation</h3>
+                    <table style="width:100%;border-collapse:collapse;font-size:14px;">
+                      <tr><td style="padding:6px;font-family:monospace;background:#f6f8fa;border:1px solid #e1e4e8;"><kbd>j</kbd></td><td style="padding:6px;border:1px solid #e1e4e8;">Scroll down</td></tr>
+                      <tr><td style="padding:6px;font-family:monospace;background:#f6f8fa;border:1px solid #e1e4e8;"><kbd>k</kbd></td><td style="padding:6px;border:1px solid #e1e4e8;">Scroll up</td></tr>
+                      <tr><td style="padding:6px;font-family:monospace;background:#f6f8fa;border:1px solid #e1e4e8;"><kbd>h</kbd></td><td style="padding:6px;border:1px solid #e1e4e8;">Scroll left</td></tr>
+                      <tr><td style="padding:6px;font-family:monospace;background:#f6f8fa;border:1px solid #e1e4e8;"><kbd>l</kbd></td><td style="padding:6px;border:1px solid #e1e4e8;">Scroll right</td></tr>
+                    </table>
+                    
+                    <h3 style="color:#0366d6;font-size:16px;margin:20px 0 10px;">Half-Page Scrolling</h3>
+                    <table style="width:100%;border-collapse:collapse;font-size:14px;">
+                      <tr><td style="padding:6px;font-family:monospace;background:#f6f8fa;border:1px solid #e1e4e8;"><kbd>d</kbd></td><td style="padding:6px;border:1px solid #e1e4e8;">Half page down</td></tr>
+                      <tr><td style="padding:6px;font-family:monospace;background:#f6f8fa;border:1px solid #e1e4e8;"><kbd>u</kbd></td><td style="padding:6px;border:1px solid #e1e4e8;">Half page up</td></tr>
+                      <tr><td style="padding:6px;font-family:monospace;background:#f6f8fa;border:1px solid #e1e4e8;"><kbd>e</kbd></td><td style="padding:6px;border:1px solid #e1e4e8;">Half page up</td></tr>
+                    </table>
+                    
+                    <h3 style="color:#0366d6;font-size:16px;margin:20px 0 10px;">Full-Page Scrolling</h3>
+                    <table style="width:100%;border-collapse:collapse;font-size:14px;">
+                      <tr><td style="padding:6px;font-family:monospace;background:#f6f8fa;border:1px solid #e1e4e8;"><kbd>p</kbd></td><td style="padding:6px;border:1px solid #e1e4e8;">Full page down</td></tr>
+                      <tr><td style="padding:6px;font-family:monospace;background:#f6f8fa;border:1px solid #e1e4e8;"><kbd>Ctrl+f</kbd></td><td style="padding:6px;border:1px solid #e1e4e8;">Full page down</td></tr>
+                      <tr><td style="padding:6px;font-family:monospace;background:#f6f8fa;border:1px solid #e1e4e8;"><kbd>Ctrl+b</kbd></td><td style="padding:6px;border:1px solid #e1e4e8;">Full page up</td></tr>
+                    </table>
+                  </div>
+                  
+                  <div>
+                    <h3 style="color:#0366d6;font-size:16px;margin-bottom:10px;">Jump Navigation</h3>
+                    <table style="width:100%;border-collapse:collapse;font-size:14px;">
+                      <tr><td style="padding:6px;font-family:monospace;background:#f6f8fa;border:1px solid #e1e4e8;"><kbd>gg</kbd></td><td style="padding:6px;border:1px solid #e1e4e8;">Jump to top</td></tr>
+                      <tr><td style="padding:6px;font-family:monospace;background:#f6f8fa;border:1px solid #e1e4e8;"><kbd>G</kbd></td><td style="padding:6px;border:1px solid #e1e4e8;">Jump to bottom</td></tr>
+                      <tr><td style="padding:6px;font-family:monospace;background:#f6f8fa;border:1px solid #e1e4e8;"><kbd>0</kbd></td><td style="padding:6px;border:1px solid #e1e4e8;">Jump to left edge</td></tr>
+                      <tr><td style="padding:6px;font-family:monospace;background:#f6f8fa;border:1px solid #e1e4e8;"><kbd>$</kbd></td><td style="padding:6px;border:1px solid #e1e4e8;">Jump to right edge</td></tr>
+                    </table>
+                    
+                    <h3 style="color:#0366d6;font-size:16px;margin:20px 0 10px;">Search</h3>
+                    <table style="width:100%;border-collapse:collapse;font-size:14px;">
+                      <tr><td style="padding:6px;font-family:monospace;background:#f6f8fa;border:1px solid #e1e4e8;"><kbd>/</kbd></td><td style="padding:6px;border:1px solid #e1e4e8;">Enter search mode</td></tr>
+                      <tr><td style="padding:6px;font-family:monospace;background:#f6f8fa;border:1px solid #e1e4e8;"><kbd>n</kbd></td><td style="padding:6px;border:1px solid #e1e4e8;">Next match</td></tr>
+                      <tr><td style="padding:6px;font-family:monospace;background:#f6f8fa;border:1px solid #e1e4e8;"><kbd>N</kbd></td><td style="padding:6px;border:1px solid #e1e4e8;">Previous match</td></tr>
+                    </table>
+                    
+                    <h3 style="color:#0366d6;font-size:16px;margin:20px 0 10px;">Visual Mode</h3>
+                    <table style="width:100%;border-collapse:collapse;font-size:14px;">
+                      <tr><td style="padding:6px;font-family:monospace;background:#f6f8fa;border:1px solid #e1e4e8;"><kbd>v</kbd></td><td style="padding:6px;border:1px solid #e1e4e8;">Toggle visual mode</td></tr>
+                    </table>
+                    
+                    <h3 style="color:#0366d6;font-size:16px;margin:20px 0 10px;">Help</h3>
+                    <table style="width:100%;border-collapse:collapse;font-size:14px;">
+                      <tr><td style="padding:6px;font-family:monospace;background:#f6f8fa;border:1px solid #e1e4e8;"><kbd>?</kbd></td><td style="padding:6px;border:1px solid #e1e4e8;">Show this help</td></tr>
+                      <tr><td style="padding:6px;font-family:monospace;background:#f6f8fa;border:1px solid #e1e4e8;"><kbd>Esc</kbd></td><td style="padding:6px;border:1px solid #e1e4e8;">Close help/exit modes</td></tr>
+                    </table>
+                  </div>
+                </div>
+                
+                <div style="margin-top:30px;padding-top:20px;border-top:1px solid #e1e4e8;text-align:center;color:#586069;font-size:13px;">
+                  Press <kbd style="background:#f6f8fa;padding:2px 6px;border:1px solid #d1d5da;border-radius:3px;font-family:monospace;">Esc</kbd> to close this help
+                </div>
+              </div>
+            \`;
+            document.body.appendChild(helpOverlay);
+            
+            function toggleHelp() {
+              helpVisible = !helpVisible;
+              helpOverlay.style.display = helpVisible ? 'block' : 'none';
+            }
+            
+            helpOverlay.addEventListener('click', function(e) {
+              if (e.target === helpOverlay) {
+                toggleHelp();
+              }
+            });
+            
+            function enterSearchMode() {
+              searchMode = true;
+              searchQuery = '';
+              searchOverlay.textContent = '/' + searchQuery;
+              searchOverlay.style.display = 'block';
+            }
+            
+            function exitSearchMode() {
+              searchMode = false;
+              searchOverlay.style.display = 'none';
+            }
+            
+            function performSearch() {
+              if (!searchQuery) return;
+              
+              // Clear previous highlights
+              document.querySelectorAll('.vim-search-highlight').forEach(el => {
+                el.outerHTML = el.innerHTML;
+              });
+              
+              searchMatches = [];
+              const regex = new RegExp(searchQuery, 'gi');
+              const walker = document.createTreeWalker(
+                document.body,
+                NodeFilter.SHOW_TEXT,
+                null,
+                false
+              );
+              
+              let node;
+              while (node = walker.nextNode()) {
+                if (node.parentElement.closest('script, style')) continue;
+                
+                const text = node.textContent;
+                let match;
+                while ((match = regex.exec(text)) !== null) {
+                  searchMatches.push({node, index: match.index, length: searchQuery.length});
+                }
+              }
+              
+              if (searchMatches.length > 0) {
+                currentMatchIndex = 0;
+                highlightMatches();
+                scrollToMatch(0);
+              }
+            }
+            
+            function highlightMatches() {
+              searchMatches.forEach((match, idx) => {
+                const span = document.createElement('span');
+                span.className = 'vim-search-highlight';
+                span.style.cssText = idx === currentMatchIndex 
+                  ? 'background:#ff9632;color:#000;font-weight:bold;' 
+                  : 'background:#ffff00;color:#000;';
+                
+                const text = match.node.textContent;
+                const before = text.substring(0, match.index);
+                const highlighted = text.substring(match.index, match.index + match.length);
+                const after = text.substring(match.index + match.length);
+                
+                const parent = match.node.parentNode;
+                const beforeNode = document.createTextNode(before);
+                const afterNode = document.createTextNode(after);
+                span.textContent = highlighted;
+                
+                parent.insertBefore(beforeNode, match.node);
+                parent.insertBefore(span, match.node);
+                parent.insertBefore(afterNode, match.node);
+                parent.removeChild(match.node);
+              });
+            }
+            
+            function scrollToMatch(index) {
+              const highlights = document.querySelectorAll('.vim-search-highlight');
+              if (highlights[index]) {
+                highlights[index].scrollIntoView({behavior: 'smooth', block: 'center'});
+              }
+            }
+            
+            function nextMatch() {
+              if (searchMatches.length === 0) return;
+              currentMatchIndex = (currentMatchIndex + 1) % searchMatches.length;
+              performSearch();
+            }
+            
+            function prevMatch() {
+              if (searchMatches.length === 0) return;
+              currentMatchIndex = currentMatchIndex - 1;
+              if (currentMatchIndex < 0) currentMatchIndex = searchMatches.length - 1;
+              performSearch();
+            }
+            
+            function clearSearchHighlights() {
+              document.querySelectorAll('.vim-search-highlight').forEach(el => {
+                el.outerHTML = el.innerHTML;
+              });
+              searchMatches = [];
+              currentMatchIndex = -1;
+            }
+            
+            function toggleVisualMode() {
+              visualMode = !visualMode;
+              if (visualMode) {
+                document.body.style.userSelect = 'text';
+                searchOverlay.textContent = '-- VISUAL --';
+                searchOverlay.style.display = 'block';
+              } else {
+                window.getSelection().removeAllRanges();
+                searchOverlay.style.display = 'none';
+                clearSearchHighlights();
+              }
+            }
+            
+            document.addEventListener('keydown', function(e) {
+              // Handle search mode
+              if (searchMode) {
+                if (e.key === 'Escape') {
+                  exitSearchMode();
+                  e.preventDefault();
+                } else if (e.key === 'Enter') {
+                  performSearch();
+                  exitSearchMode();
+                  e.preventDefault();
+                } else if (e.key === 'Backspace') {
+                  searchQuery = searchQuery.slice(0, -1);
+                  searchOverlay.textContent = '/' + searchQuery;
+                  e.preventDefault();
+                } else if (e.key.length === 1) {
+                  searchQuery += e.key;
+                  searchOverlay.textContent = '/' + searchQuery;
+                  e.preventDefault();
+                }
+                return;
+              }
+              
+              // Ignore if typing in input/textarea
+              if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+                return;
+              }
+              
+              const scrollAmount = 40;
+              const pageScrollAmount = window.innerHeight * 0.85;
+              const now = Date.now();
+              
+              // Handle 'gg' for top of page
+              if (e.key === 'g' && lastKey === 'g' && (now - lastKeyTime) < 500) {
+                window.scrollTo(0, 0);
+                e.preventDefault();
+                lastKey = '';
+                return;
+              }
+              
+              switch(e.key) {
+                case '?':
+                  toggleHelp();
+                  e.preventDefault();
+                  break;
+                case '/':
+                  enterSearchMode();
+                  e.preventDefault();
+                  break;
+                case 'n':
+                  nextMatch();
+                  e.preventDefault();
+                  break;
+                case 'N':
+                  prevMatch();
+                  e.preventDefault();
+                  break;
+                case 'v':
+                  toggleVisualMode();
+                  e.preventDefault();
+                  break;
+                case 'Escape':
+                  if (helpVisible) {
+                    toggleHelp();
+                    e.preventDefault();
+                  } else if (visualMode) {
+                    toggleVisualMode();
+                    e.preventDefault();
+                  } else if (searchMatches.length > 0) {
+                    clearSearchHighlights();
+                    e.preventDefault();
+                  }
+                  break;
+                case 'j':
+                  window.scrollBy(0, scrollAmount);
+                  e.preventDefault();
+                  break;
+                case 'k':
+                  window.scrollBy(0, -scrollAmount);
+                  e.preventDefault();
+                  break;
+                case 'h':
+                  window.scrollBy(-scrollAmount, 0);
+                  e.preventDefault();
+                  break;
+                case 'l':
+                  window.scrollBy(scrollAmount, 0);
+                  e.preventDefault();
+                  break;
+                case 'd':
+                  window.scrollBy(0, pageScrollAmount / 2);
+                  e.preventDefault();
+                  break;
+                case 'u':
+                case 'e':
+                  window.scrollBy(0, -pageScrollAmount / 2);
+                  e.preventDefault();
+                  break;
+                case 'f':
+                  if (e.ctrlKey) {
+                    window.scrollBy(0, pageScrollAmount);
+                    e.preventDefault();
+                  }
+                  break;
+                case 'b':
+                  if (e.ctrlKey) {
+                    window.scrollBy(0, -pageScrollAmount);
+                    e.preventDefault();
+                  }
+                  break;
+                case 'p':
+                  window.scrollBy(0, pageScrollAmount);
+                  e.preventDefault();
+                  break;
+                case 'g':
+                  lastKey = 'g';
+                  lastKeyTime = now;
+                  break;
+                case 'G':
+                  window.scrollTo(0, document.body.scrollHeight);
+                  e.preventDefault();
+                  break;
+                case '0':
+                  window.scrollTo(0, window.scrollY);
+                  e.preventDefault();
+                  break;
+                case '$':
+                  window.scrollTo(document.body.scrollWidth, window.scrollY);
+                  e.preventDefault();
+                  break;
+              }
+            });
+          })();
+        </script>
       </body>
       </html>
     `);

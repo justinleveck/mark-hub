@@ -103,11 +103,68 @@ m --version
 ./markhub
 ```
 
+## Keyboard Shortcuts
+
+MarkHub supports vim-style keyboard navigation for hands-free browsing:
+
+### Basic Navigation
+| Key | Action |
+|-----|--------|
+| `j` | Scroll down |
+| `k` | Scroll up |
+| `h` | Scroll left |
+| `l` | Scroll right |
+
+### Half-Page Scrolling
+| Key | Action |
+|-----|--------|
+| `d` | Scroll half page down |
+| `u` | Scroll half page up |
+| `e` | Scroll half page up (alternative) |
+
+### Full-Page Scrolling
+| Key | Action |
+|-----|--------|
+| `p` | Scroll full page down |
+| `Ctrl+f` | Scroll full page down |
+| `Ctrl+b` | Scroll full page up |
+
+### Jump Navigation
+| Key | Action |
+|-----|--------|
+| `gg` | Jump to top of page |
+| `G` | Jump to bottom of page |
+| `0` | Jump to left edge |
+| `$` | Jump to right edge |
+
+### Search
+| Key | Action |
+|-----|--------|
+| `/` | Enter search mode |
+| `n` | Next search match |
+| `N` | Previous search match |
+| `Esc` | Exit search mode |
+
+### Visual Mode
+| Key | Action |
+|-----|--------|
+| `v` | Toggle visual mode (enable text selection) |
+| `Esc` | Exit visual mode |
+
+### Help
+| Key | Action |
+|-----|--------|
+| `?` | Show keyboard shortcuts help |
+| `Esc` | Close help |
+
+These shortcuts work in both the browser and VS Code preview mode.
+
 ## Stopping the server
 
 Press `Ctrl+C` in the terminal where the server is running, or use:
 ```bash
 m -s
+m --stop
 ```
 
 ## Editor Extension (VS Code / Windsurf / Antigravity)
