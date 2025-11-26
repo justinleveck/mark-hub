@@ -496,11 +496,13 @@ app.get('/local', (req, res) => {
             
             // Create search input overlay
             const searchOverlay = document.createElement('div');
+            searchOverlay.id = 'searchOverlay';
             searchOverlay.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#2d2d2d;color:#fff;padding:10px 20px;border-radius:5px;font-family:monospace;font-size:14px;z-index:10000;display:none;box-shadow:0 4px 6px rgba(0,0,0,0.3);';
             document.body.appendChild(searchOverlay);
             
             // Create help overlay
             const helpOverlay = document.createElement('div');
+            helpOverlay.id = 'helpOverlay';
             helpOverlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:10001;display:none;overflow:auto;';
             helpOverlay.innerHTML = \`
               <div style="max-width:900px;margin:40px auto;background:#fff;border-radius:8px;padding:30px;box-shadow:0 8px 16px rgba(0,0,0,0.3);">
@@ -612,7 +614,8 @@ app.get('/local', (req, res) => {
               
               let node;
               while (node = walker.nextNode()) {
-                if (node.parentElement.closest('script, style')) continue;
+                // Skip script, style, and search overlay elements
+                if (node.parentElement.closest('script, style, #searchOverlay, #helpOverlay')) continue;
                 
                 const text = node.textContent;
                 let match;
@@ -857,6 +860,11 @@ app.get('/local', (req, res) => {
               }
             });
           })();
+          
+          // Signal to parent window (VSCode webview) that content is ready
+          if (window.parent !== window) {
+            window.parent.postMessage('markhub-ready', '*');
+          }
         </script>
       </body>
       </html>

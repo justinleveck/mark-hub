@@ -144,16 +144,68 @@ function getWebviewContent(url) {
             width: 100%;
             height: 100%;
             overflow: hidden;
+            background: #ffffff;
         }
         iframe {
             width: 100%;
             height: 100%;
             border: none;
+            opacity: 0;
+            transition: opacity 0.2s ease-in;
+        }
+        iframe.loaded {
+            opacity: 1;
+        }
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            color: #586069;
+        }
+        .loading.hidden {
+            display: none;
+        }
+        .spinner {
+            width: 40px;
+            height: 40px;
+            margin: 0 auto 16px;
+            border: 3px solid #e1e4e8;
+            border-top-color: #0366d6;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
     </style>
 </head>
 <body>
-    <iframe src="${url}" sandbox="allow-scripts allow-same-origin"></iframe>
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <div>Loading preview...</div>
+    </div>
+    <iframe id="preview" src="${url}" sandbox="allow-scripts allow-same-origin"></iframe>
+    <script>
+        const iframe = document.getElementById('preview');
+        const loading = document.getElementById('loading');
+        
+        // Listen for message from iframe content
+        window.addEventListener('message', function(event) {
+            if (event.data === 'markhub-ready') {
+                loading.classList.add('hidden');
+                iframe.classList.add('loaded');
+            }
+        });
+        
+        // Fallback timeout in case message doesn't arrive
+        setTimeout(function() {
+            loading.classList.add('hidden');
+            iframe.classList.add('loaded');
+        }, 2000);
+    </script>
 </body>
 </html>`;
 }
