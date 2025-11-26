@@ -585,9 +585,12 @@ app.get('/local', (req, res) => {
               searchOverlay.style.display = 'block';
             }
             
-            function exitSearchMode() {
+            function exitSearchMode(clearResults = false) {
               searchMode = false;
               searchOverlay.style.display = 'none';
+              if (clearResults) {
+                clearSearchHighlights();
+              }
             }
             
             function performSearch() {
@@ -659,15 +662,41 @@ app.get('/local', (req, res) => {
             
             function nextMatch() {
               if (searchMatches.length === 0) return;
+              
+              // Update current highlight to normal style
+              const highlights = document.querySelectorAll('.vim-search-highlight');
+              if (highlights[currentMatchIndex]) {
+                highlights[currentMatchIndex].style.cssText = 'background:#ffff00;color:#000;';
+              }
+              
+              // Move to next match
               currentMatchIndex = (currentMatchIndex + 1) % searchMatches.length;
-              performSearch();
+              
+              // Highlight new current match
+              if (highlights[currentMatchIndex]) {
+                highlights[currentMatchIndex].style.cssText = 'background:#ff9632;color:#000;font-weight:bold;';
+                highlights[currentMatchIndex].scrollIntoView({behavior: 'smooth', block: 'center'});
+              }
             }
             
             function prevMatch() {
               if (searchMatches.length === 0) return;
+              
+              // Update current highlight to normal style
+              const highlights = document.querySelectorAll('.vim-search-highlight');
+              if (highlights[currentMatchIndex]) {
+                highlights[currentMatchIndex].style.cssText = 'background:#ffff00;color:#000;';
+              }
+              
+              // Move to previous match
               currentMatchIndex = currentMatchIndex - 1;
               if (currentMatchIndex < 0) currentMatchIndex = searchMatches.length - 1;
-              performSearch();
+              
+              // Highlight new current match
+              if (highlights[currentMatchIndex]) {
+                highlights[currentMatchIndex].style.cssText = 'background:#ff9632;color:#000;font-weight:bold;';
+                highlights[currentMatchIndex].scrollIntoView({behavior: 'smooth', block: 'center'});
+              }
             }
             
             function clearSearchHighlights() {
@@ -695,19 +724,24 @@ app.get('/local', (req, res) => {
               // Handle search mode
               if (searchMode) {
                 if (e.key === 'Escape') {
-                  exitSearchMode();
+                  exitSearchMode(true);
                   e.preventDefault();
                 } else if (e.key === 'Enter') {
-                  performSearch();
-                  exitSearchMode();
+                  exitSearchMode(false);
                   e.preventDefault();
                 } else if (e.key === 'Backspace') {
                   searchQuery = searchQuery.slice(0, -1);
                   searchOverlay.textContent = '/' + searchQuery;
+                  if (searchQuery) {
+                    performSearch();
+                  } else {
+                    clearSearchHighlights();
+                  }
                   e.preventDefault();
-                } else if (e.key.length === 1) {
+                } else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
                   searchQuery += e.key;
                   searchOverlay.textContent = '/' + searchQuery;
+                  performSearch();
                   e.preventDefault();
                 }
                 return;
