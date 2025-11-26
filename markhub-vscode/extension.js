@@ -153,7 +153,118 @@ function getWebviewContent(url) {
     </style>
 </head>
 <body>
-    <iframe src="${url}" sandbox="allow-scripts"></iframe>
+    <iframe id="markhub-frame" src="${url}" sandbox="allow-scripts allow-same-origin"></iframe>
+    <script>
+        (function() {
+            const iframe = document.getElementById('markhub-frame');
+            
+            // Wait for iframe to load
+            iframe.addEventListener('load', function() {
+                try {
+                    const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                    const iframeWin = iframe.contentWindow;
+                    
+                    // Vim-style keyboard navigation
+                    iframeDoc.addEventListener('keydown', function(e) {
+                        // Ignore if typing in input/textarea
+                        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+                            return;
+                        }
+                        
+                        const scrollAmount = 40;
+                        const pageScrollAmount = iframeWin.innerHeight * 0.85;
+                        
+                        switch(e.key) {
+                            case 'j':
+                                // Scroll down
+                                iframeWin.scrollBy(0, scrollAmount);
+                                e.preventDefault();
+                                break;
+                            case 'k':
+                                // Scroll up
+                                iframeWin.scrollBy(0, -scrollAmount);
+                                e.preventDefault();
+                                break;
+                            case 'h':
+                                // Scroll left
+                                iframeWin.scrollBy(-scrollAmount, 0);
+                                e.preventDefault();
+                                break;
+                            case 'l':
+                                // Scroll right
+                                iframeWin.scrollBy(scrollAmount, 0);
+                                e.preventDefault();
+                                break;
+                            case 'd':
+                                if (e.ctrlKey) {
+                                    // Ctrl+d: Half page down
+                                    iframeWin.scrollBy(0, pageScrollAmount / 2);
+                                    e.preventDefault();
+                                }
+                                break;
+                            case 'u':
+                                if (e.ctrlKey) {
+                                    // Ctrl+u: Half page up
+                                    iframeWin.scrollBy(0, -pageScrollAmount / 2);
+                                    e.preventDefault();
+                                }
+                                break;
+                            case 'f':
+                                if (e.ctrlKey) {
+                                    // Ctrl+f: Page down
+                                    iframeWin.scrollBy(0, pageScrollAmount);
+                                    e.preventDefault();
+                                }
+                                break;
+                            case 'b':
+                                if (e.ctrlKey) {
+                                    // Ctrl+b: Page up
+                                    iframeWin.scrollBy(0, -pageScrollAmount);
+                                    e.preventDefault();
+                                }
+                                break;
+                            case 'g':
+                                if (!e.shiftKey) {
+                                    // gg: Go to top (need double g, simplified to single)
+                                    iframeWin.scrollTo(0, 0);
+                                    e.preventDefault();
+                                } else {
+                                    // G: Go to bottom
+                                    iframeWin.scrollTo(0, iframeDoc.body.scrollHeight);
+                                    e.preventDefault();
+                                }
+                                break;
+                            case 'G':
+                                // G: Go to bottom
+                                iframeWin.scrollTo(0, iframeDoc.body.scrollHeight);
+                                e.preventDefault();
+                                break;
+                            case '0':
+                                // 0: Go to start of line (left edge)
+                                iframeWin.scrollTo(0, iframeWin.scrollY);
+                                e.preventDefault();
+                                break;
+                            case '$':
+                                // $: Go to end of line (right edge)
+                                iframeWin.scrollTo(iframeDoc.body.scrollWidth, iframeWin.scrollY);
+                                e.preventDefault();
+                                break;
+                        }
+                    });
+                    
+                    // Focus the iframe content for immediate keyboard access
+                    iframeWin.focus();
+                } catch (err) {
+                    console.error('Could not attach keyboard handlers:', err);
+                }
+            });
+            
+            // Ensure iframe stays focused when clicked
+            iframe.addEventListener('click', function() {
+                iframe.contentWindow.focus();
+            });
+        })();
+    </script>
 </body>
 </html>`;
 }

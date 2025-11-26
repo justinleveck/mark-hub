@@ -142,4 +142,6 @@ The extension will automatically start the MarkHub server if it's not running an
 
 ## License
 
-ISC
+MIT © Justin Leveck
+
+See [LICENSE](LICENSE) for more details.
