@@ -136,6 +136,86 @@ const actionMenuScript = `
   });
 `;
 
+// Copy button styles (GitHub-style)
+const copyButtonStyles = `
+  .code-block-wrapper {
+    position: relative;
+  }
+  .copy-button {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: #57606a;
+    cursor: pointer;
+    transition: background 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .copy-button:hover {
+    background: #eaeef2;
+  }
+  .copy-button.copied {
+    color: #1a7f37;
+  }
+  .copy-button svg {
+    width: 16px;
+    height: 16px;
+    fill: currentColor;
+  }
+  @media print {
+    .copy-button {
+      display: none;
+    }
+  }
+`;
+
+// Copy button script
+const copyButtonScript = `
+  (function() {
+    const copyIcon = '<svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1" width="16"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z"></path><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z"></path></svg>';
+    const checkIcon = '<svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1" width="16"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"></path></svg>';
+
+    document.querySelectorAll('pre').forEach(function(pre) {
+      // Skip if already wrapped
+      if (pre.parentElement.classList.contains('code-block-wrapper')) return;
+
+      // Create wrapper
+      const wrapper = document.createElement('div');
+      wrapper.className = 'code-block-wrapper';
+      pre.parentNode.insertBefore(wrapper, pre);
+      wrapper.appendChild(pre);
+
+      // Create copy button
+      const button = document.createElement('button');
+      button.className = 'copy-button';
+      button.setAttribute('aria-label', 'Copy code');
+      button.innerHTML = copyIcon;
+      wrapper.appendChild(button);
+
+      button.addEventListener('click', function() {
+        const code = pre.querySelector('code') || pre;
+        const text = code.textContent;
+
+        navigator.clipboard.writeText(text).then(function() {
+          button.innerHTML = checkIcon;
+          button.classList.add('copied');
+          setTimeout(function() {
+            button.innerHTML = copyIcon;
+            button.classList.remove('copied');
+          }, 2000);
+        });
+      });
+    });
+  })();
+`;
+
 const actionMenuHTML = `
 <div class="actions-flag no-print">
   <button class="flag-toggle" onclick="toggleMenu(event)">⚙ Actions</button>
@@ -344,11 +424,13 @@ app.post('/render', (req, res) => {
             }
           }
           ${actionMenuStyles}
+          ${copyButtonStyles}
         </style>
       </head>
       <body class="markdown-body">
         ${actionMenuHTML}
         ${htmlContent}
+        <script>${copyButtonScript}</script>
       </body>
       </html>
     `);
@@ -415,11 +497,13 @@ app.get('/view', async (req, res) => {
             }
           }
           ${actionMenuStyles}
+          ${copyButtonStyles}
         </style>
       </head>
       <body class="markdown-body">
         ${actionMenuHTML}
         ${htmlContent}
+        <script>${copyButtonScript}</script>
       </body>
       </html>
     `);
@@ -477,12 +561,14 @@ app.get('/local', (req, res) => {
             }
           }
           ${actionMenuStyles}
+          ${copyButtonStyles}
         </style>
       </head>
       <body class="markdown-body">
         ${!isEmbed ? actionMenuHTML : ''}
         ${htmlContent}
         <script>
+          ${copyButtonScript}
           // Vim-style keyboard navigation with visual mode and search
           (function() {
             let lastKeyTime = 0;
